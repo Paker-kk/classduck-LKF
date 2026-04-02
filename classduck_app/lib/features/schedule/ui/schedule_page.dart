@@ -12,6 +12,7 @@ import '../../import/data/school_config_repository.dart';
 import '../../import/domain/school_config.dart';
 import '../../import/ui/import_school_list_page.dart';
 import '../../import/ui/doubao_import_page.dart';
+import '../../../shared/navigation/duck_page_route.dart';
 import '../../settings/data/appearance_state.dart';
 import '../../todo/data/todo_repository.dart';
 import '../../todo/domain/todo_item.dart';
@@ -420,7 +421,7 @@ class _SchedulePageState extends State<SchedulePage> {
       await _handleCameraAdd();
     } else if (action == 'doubao') {
       final bool? imported = await Navigator.of(context).push<bool>(
-        MaterialPageRoute<bool>(
+        DuckPageRoute<bool>(
           builder: (BuildContext context) => const DoubaoImportPage(),
         ),
       );

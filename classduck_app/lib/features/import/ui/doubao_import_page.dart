@@ -292,9 +292,13 @@ class _DoubaoImportPageState extends State<DoubaoImportPage>
       Navigator.of(context).pop(true);
     } catch (error) {
       if (!mounted) return;
+      // 将原始异常包装为用户友好的中文提示
+      final String userMessage = error is FormatException
+          ? error.message
+          : '导入时出现问题，请检查粘贴的内容是否为豆包返回的完整结果';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('导入失败：$error'),
+          content: Text(userMessage),
           behavior: SnackBarBehavior.floating,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

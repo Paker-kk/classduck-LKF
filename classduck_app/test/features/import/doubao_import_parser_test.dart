@@ -69,5 +69,64 @@ void main() {
       expect(table.courses.last.timeCount, 4);
       expect(table.courses.last.classroom, isNull);
     });
+
+    // ── 异常路径测试 ──
+
+    test('throws FormatException on empty input', () {
+      expect(
+        () => DoubaoImportParser.parse(''),
+        throwsA(isA<FormatException>()),
+      );
+      expect(
+        () => DoubaoImportParser.parse('   '),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('throws FormatException on invalid JSON', () {
+      expect(
+        () => DoubaoImportParser.parse('这不是JSON'),
+        throwsA(isA<FormatException>()),
+      );
+      expect(
+        () => DoubaoImportParser.parse('{invalid json}'),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('throws FormatException when courses array is missing', () {
+      expect(
+        () => DoubaoImportParser.parse('{"name": "测试课表"}'),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('throws FormatException when course lacks name', () {
+      const String source = '[{"d":1,"s":1,"e":2,"w":"1-16"}]';
+      expect(
+        () => DoubaoImportParser.parse(source),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('throws FormatException when course lacks weekday', () {
+      const String source = '[{"n":"数学","s":1,"e":2,"w":"1-16"}]';
+      expect(
+        () => DoubaoImportParser.parse(source),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('correctly expands odd/even week patterns', () {
+      const String source = '''[
+  {"n":"单周课","d":1,"s":1,"e":2,"w":"1-10周(单)","l":null,"t":null},
+  {"n":"双周课","d":2,"s":3,"e":4,"w":"2-10周(双)","l":null,"t":null}
+]''';
+
+      final table = DoubaoImportParser.parse(source);
+
+      expect(table.courses[0].weeks, <int>[1, 3, 5, 7, 9]);
+      expect(table.courses[1].weeks, <int>[2, 4, 6, 8, 10]);
+    });
   });
 }
