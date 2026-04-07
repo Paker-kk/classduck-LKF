@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:url_launcher/url_launcher.dart';
+
 import '../../../shared/theme/app_tokens.dart';
 import '../../../shared/widgets/duck_modal.dart';
-import '../data/release_repository.dart';
+import '../data/github_release_service.dart';
 
 class AboutPage extends StatefulWidget {
   const AboutPage({super.key});
@@ -14,7 +16,7 @@ class AboutPage extends StatefulWidget {
 
 class _AboutPageState extends State<AboutPage> {
   static const String _currentVersion = 'v1.0.0';
-  final ReleaseRepository _releaseRepository = ReleaseRepository();
+  final GitHubReleaseService _releaseService = GitHubReleaseService();
 
   @override
   Widget build(BuildContext context) {
@@ -141,6 +143,14 @@ class _AboutPageState extends State<AboutPage> {
     );
   }
 
+  Future<void> _launchUpdateUrl(String url) async {
+    if (url.isEmpty) return;
+    final Uri uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
   void _openPrivacyPolicy() {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('隐私政策页面开发中')),
@@ -164,10 +174,8 @@ class _AboutPageState extends State<AboutPage> {
 
   Future<_VersionCheckResult> _loadVersionCheckResult() async {
     try {
-      // 前后端分离：版本信息由后端 release 服务给出，前端只负责展示与交互。
-      final ReleaseCheckResult result = await _releaseRepository.checkRelease(
-        currentVersion: _currentVersion.replaceFirst('v', ''),
-        platform: 'android',
+      final GitHubReleaseResult result = await _releaseService.checkForUpdate(
+        _currentVersion.replaceFirst('v', ''),
       );
       return _VersionCheckResult(
         currentVersion: result.currentVersion,
@@ -176,13 +184,12 @@ class _AboutPageState extends State<AboutPage> {
         updateUrl: result.updateUrl,
       );
     } catch (_) {
-      // 兜底：后端不可用时继续保留本地默认值，保证更新弹窗链路可用。
-      return const _VersionCheckResult(
-        currentVersion: '1.0.0',
-        latestVersion: '1.1.0',
-        releaseNotes:
-            '1. 新增：课程提醒可自定义提前时间\n2. 优化：导入课表稳定性与速度\n3. 修复：部分机型弹窗错位问题\n4. 细节：多处文案与交互动效调整',
-        updateUrl: 'https://example.com/classduck/android',
+      // 兜底：GitHub API 不可用时返回「已是最新」，避免误导用户。
+      return _VersionCheckResult(
+        currentVersion: _currentVersion.replaceFirst('v', ''),
+        latestVersion: _currentVersion.replaceFirst('v', ''),
+        releaseNotes: '',
+        updateUrl: '',
       );
     }
   }
@@ -335,9 +342,7 @@ class _AboutPageState extends State<AboutPage> {
                     child: FilledButton(
                       onPressed: () {
                         Navigator.of(context).maybePop();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('正在跳转到更新页面：${result.updateUrl}')),
-                        );
+                        _launchUpdateUrl(result.updateUrl);
                       },
                       style: FilledButton.styleFrom(
                         elevation: 0,

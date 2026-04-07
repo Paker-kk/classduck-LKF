@@ -4,6 +4,7 @@ import '../../features/profile/ui/profile_page.dart';
 import '../../features/schedule/ui/schedule_page.dart';
 import '../../features/todo/ui/todo_page.dart';
 import '../../shared/theme/app_tokens.dart';
+import '../update_checker.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -20,6 +21,15 @@ class _AppShellState extends State<AppShell> {
     TodoPage(),
     ProfilePage(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // 首帧渲染后静默检查更新
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      UpdateChecker.checkOnStartup(context);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
